@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>ServiceHub — Karachi Marketplace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #6C5CE7; --primary-dark: #5A4BD1; --primary-light: #A29BFE;
+      --secondary: #FD79A8; --accent: #00CEC9;
+      --gradient-main: linear-gradient(135deg, #6C5CE7, #A29BFE, #FD79A8);
+      --gradient-primary: linear-gradient(135deg, #6C5CE7, #5A4BD1);
+      --gradient-splash: linear-gradient(135deg, #0c0c1e, #1a1a3e 30%, #2d1b69 60%, #6C5CE7);
+      --bg: #F8F9FE; --bg-alt: #EEF0FF; --text: #1A1A2E; --text-secondary: #6B7280; --text-light: #9CA3AF;
+      --border: #E5E7EB; --radius-md: 12px; --radius-lg: 16px;
+      --shadow-lg: 0 10px 25px -5px rgba(0,0,0,0.08);
+      --safe-bottom: env(safe-area-inset-bottom,0);
+    }
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    body { font-family:'Inter',sans-serif; background:#0c0c1e; display:flex; justify-content:center; min-height:100vh; overflow:hidden; }
+    html,body { height:100%; overflow:hidden; }
+    .app-container { width:100%; max-width:430px; height:100vh; height:100dvh; background:var(--bg); position:relative; overflow:hidden; box-shadow:0 0 60px rgba(108,92,231,0.15); }
+    .screen { display:none; width:100%; height:100%; position:absolute; top:0; left:0; background:var(--bg); z-index:1; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+    .screen.active { display:block; z-index:10; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes pulseGlow { 0%,100%{box-shadow:0 0 20px rgba(108,92,231,0.3)} 50%{box-shadow:0 0 40px rgba(108,92,231,0.6)} }
+    @keyframes spin { to{transform:rotate(360deg)} }
+    @keyframes progressPulse { 0%{width:0%} 100%{width:100%} }
+    @keyframes staggerIn { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+    .stagger-1{animation:staggerIn .5s ease .1s forwards;opacity:0}
+    .stagger-2{animation:staggerIn .5s ease .2s forwards;opacity:0}
+    .stagger-3{animation:staggerIn .5s ease .3s forwards;opacity:0}
+    .stagger-4{animation:staggerIn .5s ease .4s forwards;opacity:0}
+    .stagger-5{animation:staggerIn .5s ease .5s forwards;opacity:0}
+    .fade-up{animation:fadeUp .6s ease forwards}
+    .splash{background:var(--gradient-splash);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
+    .splash-logo-icon{width:64px;height:64px;border-radius:50%;background:var(--gradient-main);display:flex;align-items:center;justify-content:center;font-size:28px;color:white;box-shadow:0 0 30px rgba(108,92,231,0.4);animation:pulseGlow 2s ease-in-out infinite}
+    .splash-title{font-size:42px;font-weight:800;color:white;letter-spacing:-1px;margin-top:8px}
+    .splash-title span{background:var(--gradient-main);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .splash-subtitle{color:rgba(255,255,255,0.5);margin-top:4px}
+    .splash-loader{margin-top:48px}
+    .splash-loader-bar{width:160px;height:3px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden}
+    .splash-loader-fill{height:100%;background:var(--gradient-main);animation:progressPulse 2s ease-in-out forwards}
+    .splash-loader-text{font-size:12px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1px;margin-top:8px}
+    .onboarding{min-height:100vh;background:white}
+    .onboarding-header{background:var(--gradient-splash);padding:60px 24px 40px;text-align:center;border-radius:0 0 40px 40px;position:relative}
+    .onboarding-header::after{content:'';position:absolute;bottom:-20px;left:-10%;width:120%;height:40px;background:white;border-radius:50%}
+    .onboarding-header h1{font-size:32px;font-weight:800;color:white;margin-bottom:6px}
+    .onboarding-header p{font-size:15px;color:rgba(255,255,255,0.6)}
+    .mini-stats{display:flex;justify-content:center;gap:32px;margin-top:24px}
+    .mini-stats .num{font-size:22px;font-weight:800;color:white}
+    .mini-stats .label{font-size:11px;color:rgba(255,255,255,0.5)}
+    .onboarding-body{padding:32px 24px}
+    .role-card{display:flex;align-items:center;gap:16px;width:100%;padding:18px 20px;border-radius:var(--radius-lg);border:2px solid var(--border);background:white;cursor:pointer;transition:all .3s;margin-bottom:12px}
+    .role-card:hover{border-color:var(--primary);transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+    .role-card .icon-wrap{width:52px;height:52px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;font-size:22px}
+    .role-card .icon-wrap.user{background:linear-gradient(135deg,#6C5CE7,#A29BFE);color:white}
+    .role-card .icon-wrap.provider{background:linear-gradient(135deg,#FD79A8,#FDCB6E);color:white}
+    .role-card .icon-wrap.admin{background:linear-gradient(135deg,#00CEC9,#55EFC4);color:white}
+    .page-header{background:white;padding:16px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50}
+    .page-header h2{font-size:18px;font-weight:700;flex:1}
+    .page-header .back-btn{width:36px;height:36px;border-radius:50%;border:none;background:var(--bg);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text);font-size:16px}
+    .btn-primary{background:var(--gradient-primary);color:white;border:none;padding:16px 24px;border-radius:var(--radius-md);font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .3s;width:100%}
+    .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(108,92,231,0.35)}
+    .form-group{margin-bottom:18px}
+    .form-group label{display:block;font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px}
+    .form-input{width:100%;padding:14px 16px;border:2px solid var(--border);border-radius:var(--radius-md);display:flex;align-items:center;gap:10px;background:white}
+    .form-input:focus-within{border-color:var(--primary);box-shadow:0 0 0 4px rgba(108,92,231,0.1)}
+    .form-input i{color:var(--text-light);width:20px}
+    .form-input input{border:none;outline:none;flex:1;font-size:15px;background:transparent;font-family:'Inter',sans-serif;color:var(--text)}
+    .bottom-nav{display:flex;background:white;border-top:1px solid var(--border);padding:8px 0 calc(8px + var(--safe-bottom));position:sticky;bottom:0;z-index:50}
+    .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px;cursor:pointer;color:var(--text-light);font-size:10px;transition:all .3s}
+    .nav-item i{font-size:22px}
+    .nav-item.active{color:var(--primary)}
+    .hero-banner{background:var(--gradient-splash);padding:32px 24px 40px;border-radius:0 0 32px 32px;position:relative}
+    .hero-banner h1{font-size:24px;font-weight:800;color:white;margin-bottom:18px}
+    .hero-search{display:flex;align-items:center;background:rgba(255,255,255,0.15);backdrop-filter:blur(10px);border-radius:var(--radius-md);padding:0 16px;gap:10px}
+    .hero-search input{border:none;background:transparent;padding:14px 0;flex:1;outline:none;font-size:14px;color:white;font-family:'Inter',sans-serif}
+    .hero-search input::placeholder{color:rgba(255,255,255,0.4)}
+    .section-header{display:flex;align-items:center;justify-content:space-between;padding:20px 20px 12px}
+    .section-header h2{font-size:18px;font-weight:700;color:var(--text)}
+    .cats-scroll{display:flex;gap:10px;padding:0 20px;overflow-x:auto;padding-bottom:8px}
+    .cats-scroll::-webkit-scrollbar{display:none}
+    .cat-chip{padding:10px 20px;border-radius:25px;border:none;cursor:pointer;font-size:13px;font-weight:500;background:white;color:var(--text-secondary);white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,0.06);display:flex;align-items:center;gap:8px}
+    .cat-chip.active{background:var(--primary);color:white}
+    .provider-grid{padding:4px 20px 80px}
+    .provider-card{background:white;border-radius:var(--radius-lg);padding:18px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,0.06);border:1px solid var(--border)}
+    .provider-card .top-row{display:flex;gap:14px}
+    .provider-card .avatar{width:56px;height:56px;border-radius:50%;background:var(--gradient-main);display:flex;align-items:center;justify-content:center;color:white;font-size:24px;flex-shrink:0}
+    .provider-card .info{flex:1}
+    .provider-card .info h3{font-size:16px;font-weight:700;color:var(--text)}
+    .provider-card .specialties{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+    .provider-card .specialties .tag{padding:4px 10px;background:var(--bg-alt);border-radius:6px;font-size:11px;color:var(--primary);font-weight:500}
+    .provider-card .book-btn{width:100%;margin-top:14px;padding:11px;background:var(--gradient-primary);color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer}
+    .auth-top{background:var(--gradient-splash);padding:48px 24px 36px;border-radius:0 0 36px 36px;position:relative}
+    .auth-top::after{content:'';position:absolute;bottom:-16px;left:-10%;width:120%;height:32px;background:white;border-radius:50%}
+    .auth-top h1{font-size:28px;font-weight:800;color:white}
+    .auth-top p{font-size:14px;color:rgba(255,255,255,0.6)}
+    .auth-form{padding:28px 24px 24px}
+    .booking-card{background:white;border-radius:var(--radius-lg);padding:18px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,0.06);border:1px solid var(--border)}
+    .booking-card .top-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+    .booking-card .top-row h3{font-size:16px;font-weight:700}
+    .booking-card .detail-row{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary);margin-bottom:4px}
+    .booking-card .bottom-row{display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+    .cost{font-size:17px;font-weight:700;color:var(--primary)}
+    .status-badge{padding:4px 14px;border-radius:20px;font-size:11px;font-weight:700;color:white}
+    .action-btn{padding:9px 18px;background:var(--gradient-primary);color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px}
+    .action-btn.danger{background:linear-gradient(135deg,#FF6B6B,#EE5A24)}
+    .action-btn.success{background:linear-gradient(135deg,#00B894,#00CEC9)}
+    .profile-cover{background:var(--gradient-splash);padding:24px 24px 60px;text-align:center;border-radius:0 0 36px 36px}
+    .profile-cover .avatar-lg{width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,0.2);margin:0 auto 12px;display:flex;align-items:center;justify-content:center;color:white;font-size:36px;border:3px solid rgba(255,255,255,0.3)}
+    .profile-cover h2{font-size:22px;font-weight:800;color:white}
+    .profile-card{margin:-16px 16px 16px;background:white;border-radius:var(--radius-lg);padding:20px;box-shadow:var(--shadow-lg);position:relative;z-index:2}
+    .profile-row{display:flex;align-items:center;gap:14px;padding:12px 0}
+    .profile-row:not(:last-child){border-bottom:1px solid var(--border)}
+    .profile-row .label{font-size:11px;color:var(--text-light);text-transform:uppercase}
+    .profile-row .value{font-size:14px;font-weight:600;color:var(--text);margin-top:2px}
+    .earnings-hero{background:var(--gradient-primary);border-radius:24px;padding:28px;text-align:center;color:white;margin:16px;box-shadow:0 8px 30px rgba(108,92,231,0.3)}
+    .earnings-hero .earnings-amount{font-size:42px;font-weight:800;margin-top:8px}
+    .chip{padding:8px 18px;border-radius:20px;border:none;cursor:pointer;font-size:13px;font-weight:500;background:var(--bg);color:var(--text-secondary);transition:all .3s}
+    .chip.selected{background:var(--primary);color:white}
+    .chips-wrap{display:flex;flex-wrap:wrap;gap:8px}
+    .filter-chip{padding:8px 18px;border-radius:20px;background:white;border:1px solid var(--border);cursor:pointer;font-size:13px;white-space:nowrap;transition:all .3s;color:var(--text-secondary)}
+    .filter-chip.active{background:var(--primary);color:white;border-color:var(--primary)}
+    .provider-filter-row{display:flex;gap:8px;padding:12px 16px;overflow-x:auto}
+    .provider-filter-row::-webkit-scrollbar{display:none}
+    .toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);padding:14px 24px;border-radius:var(--radius-md);font-size:14px;font-weight:500;z-index:9999;animation:fadeUp .4s ease;max-width:360px;text-align:center;backdrop-filter:blur(20px)}
+    .toast.success{background:linear-gradient(135deg,#00B894,#00CEC9);color:white}
+    .toast.error{background:linear-gradient(135deg,#FF6B6B,#EE5A24);color:white}
+    .toast.info{background:rgba(26,26,46,0.9);color:white}
+    .empty-state{text-align:center;padding:60px 20px;color:var(--text-light)}
+    .empty-state i{font-size:56px;margin-bottom:16px;opacity:0.3}
+    .empty-state h3{font-size:18px;color:var(--text-secondary)}
+    .stars{display:flex;gap:8px;justify-content:center;font-size:44px;margin:20px 0}
+    .stars i{cursor:pointer;color:#ddd}
+    .stars i.active{color:#FDCB6E}
+    .spinner{display:inline-block;width:20px;height:20px;border:2px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin .6s linear}
+    .wallet-warn{border:2px solid #ff9800;border-radius:12px;padding:12px 16px;margin:0 16px 12px;display:flex;align-items:center;gap:10px;font-size:13px;background:rgba(255,152,0,0.08);color:#e65100}
+    .paymob-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(0,184,148,0.1);padding:3px 10px;border-radius:6px;font-size:11px;color:#00B894}
+    .verification-badge{display:flex;align-items:center;gap:10px;padding:12px 18px;border-radius:12px;margin:0 16px 16px;font-size:13px;font-weight:600}
+    .verification-badge.approved{background:rgba(0,184,148,0.1);color:#00B894}
+    .verification-badge.pending{background:rgba(253,203,110,0.15);color:#FDCB6E}
+  </style>
+</head>
+<body>
+<div class="app-container" id="app">
+  <!-- SPLASH -->
+  <div class="screen active" id="screen-splash">
+    <div class="splash">
+      <div class="splash-logo-icon fade-up" style="animation-delay:.2s;opacity:0;animation-fill-mode:forwards"><i class="fas fa-handshake"></i></div>
+      <div class="splash-title fade-up" style="animation-delay:.5s;opacity:0;animation-fill-mode:forwards">Service<span>Hub</span></div>
+      <div class="splash-subtitle fade-up" style="animation-delay:.7s;opacity:0;animation-fill-mode:forwards">Karachi's trusted service marketplace</div>
+      <div class="splash-loader fade-up" style="animation-delay:1s;opacity:0;animation-fill-mode:forwards">
+        <div class="splash-loader-bar"><div class="splash-loader-fill"></div></div>
+        <div class="splash-loader-text">Connecting Karachi with professionals</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ONBOARDING -->
+  <div class="screen" id="screen-onboarding">
+    <div class="onboarding">
+      <div class="onboarding-header stagger-2">
+        <h1>Find Trusted<br>Karachi Professionals</h1>
+        <p>Connect with top-rated mechanics, plumbers & more in your area</p>
+        <div class="mini-stats stagger-4">
+          <div class="stat-item"><div class="num">500+</div><div class="label">Professionals</div></div>
+          <div class="stat-item"><div class="num">2K+</div><div class="label">Jobs Done</div></div>
+          <div class="stat-item"><div class="num">4.8★</div><div class="label">Avg Rating</div></div>
+        </div>
+      </div>
+      <div class="onboarding-body">
+        <h2 class="stagger-5">Get Started</h2>
+        <p class="stagger-5" style="font-size:14px;color:var(--text-secondary);margin-bottom:20px">Choose how you'd like to use ServiceHub</p>
+        <div class="role-card stagger-5" onclick="navigateTo('user-login')">
+          <div class="icon-wrap user"><i class="fas fa-user"></i></div>
+          <div><h3>I need a Service</h3><p style="font-size:13px;color:var(--text-secondary)">Find & hire professionals near you</p></div>
+          <i class="fas fa-chevron-right" style="margin-left:auto;color:var(--text-light)"></i>
+        </div>
+        <div class="role-card stagger-5" onclick="navigateTo('provider-login')">
+          <div class="icon-wrap provider"><i class="fas fa-briefcase"></i></div>
+          <div><h3>I offer Services</h3><p style="font-size:13px;color:var(--text-secondary)">Grow your business with new clients</p></div>
+          <i class="fas fa-chevron-right" style="margin-left:auto;color:var(--text-light)"></i>
+        </div>
+        <div class="role-card stagger-5" onclick="navigateTo('admin-login')">
+          <div class="icon-wrap admin"><i class="fas fa-shield-halved"></i></div>
+          <div><h3>Admin</h3><p style="font-size:13px;color:var(--text-secondary)">Manage platform & providers</p></div>
+          <i class="fas fa-chevron-right" style="margin-left:auto;color:var(--text-light)"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- USER LOGIN -->
+  <div class="screen" id="screen-user-login">
+    <div class="page-header" style="background:transparent;border:none;position:absolute;z-index:50"><button class="back-btn" onclick="navigateTo('onboarding')"><i class="fas fa-arrow-left"></i></button><h2 style="color:white">User Login</h2></div>
+    <div class="auth-top"><h1>Welcome Back!</h1><p>Login to your customer account</p></div>
+    <div class="auth-form">
+      <div class="form-group"><label>Email Address</label><div class="form-input"><i class="fas fa-envelope"></i><input type="email" id="user-login-email" value="hassan@example.com"></div></div>
+      <div class="form-group"><label>Password</label><div class="form-input"><i class="fas fa-lock"></i><input type="password" id="user-login-pass" value="password123"></div></div>
+      <button class="btn-primary" onclick="handleUserLogin()" id="user-login-btn"><i class="fas fa-arrow-right"></i> Login</button>
+      <div class="toggle-link" style="text-align:center;margin-top:16px;font-size:14px;color:var(--text-secondary)">Don't have an account? <span style="color:var(--primary);font-weight:700;cursor:pointer" onclick="navigateTo('user-signup')">Create one</span></div>
+      <div style="margin-top:16px;padding:12px;background:var(--bg-alt);border-radius:12px;text-align:center;font-size:12px;color:var(--primary)"><i class="fas fa-info-circle"></i> Demo: hassan@example.com / password123</div>
+    </div>
+  </div>
+
+  <!-- USER SIGNUP -->
+  <div class="screen" id="screen-user-signup">
+    <div class="page-header" style="background:transparent;border:none;position:absolute;z-index:50"><button class="back-btn" onclick="navigateTo('onboarding')"><i class="fas fa-arrow-left"></i></button><h2 style="color:white">Sign Up</h2></div>
+    <div class="auth-top"><h1>Create Account</h1><p>Join as a customer</p></div>
+    <div class="auth-form">
+      <div class="form-group"><label>Full Name</label><div class="form-input"><i class="fas fa-user"></i><input type="text" id="user-signup-name" placeholder="Hassan Ahmed"></div></div>
+      <div class="form-group"><label>Phone Number</label><div class="form-input"><i class="fas fa-phone"></i><input type="tel" id="user-signup-phone" placeholder="+92 300 1234567"></div></div>
+      <div class="form-group"><label>Location / Area</label><div class="form-input"><i class="fas fa-location-dot"></i><input type="text" id="user-signup-location" placeholder="Gulshan, Karachi"></div></div>
+      <div class="form-group"><label>Email</label><div class="form-input"><i class="fas fa-envelope"></i><input type="email" id="user-signup-email" placeholder="your@email.com"></div></div>
+      <div class="form-group"><label>Password</label><div class="form-input"><i class="fas fa-lock"></i><input type="password" id="user-signup-pass" placeholder="Min 6 characters"></div></div>
+      <button class="btn-primary" onclick="handleUserSignup()"><i class="fas fa-user-plus"></i> Create Account</button>
+      <div class="toggle-link" style="text-align:center;margin-top:16px;font-size:14px;color:var(--text-secondary)">Already have an account? <span style="color:var(--primary);font-weight:700;cursor:pointer" onclick="navigateTo('user-login')">Login</span></div>
+    </div>
+  </div>
+
+  <!-- PROVIDER LOGIN -->
+  <div class="screen" id="screen-provider-login">
+    <div class="page-header" style="background:transparent;border:none;position:absolute;z-index:50"><button class="back-btn" onclick="navigateTo('onboarding')"><i class="fas fa-arrow-left"></i></button><h2 style="color:white">Provider Login</h2></div>
+    <div class="auth-top"><h1>Welcome Back!</h1><p>Login to your provider account</p></div>
+    <div class="auth-form">
+      <div class="form-group"><label>Email</label><div class="form-input"><i class="fas fa-envelope"></i><input type="email" id="provider-login-email" value="ahmed.plumbing@example.com"></div></div>
+      <div class="form-group"><label>Password</label><div class="form-input"><i class="fas fa-lock"></i><input type="password" id="provider-login-pass" value="password123"></div></div>
+      <button class="btn-primary" onclick="handleProviderLogin()"><i class="fas fa-arrow-right"></i> Login</button>
+      <div class="toggle-link" style="text-align:center;margin-top:16px;font-size:14px;color:var(--text-secondary)">Don't have an account? <span style="color:var(--primary);font-weight:700;cursor:pointer" onclick="navigateTo('provider-signup')">Register</span></div>
+    </div>
+  </div>
+
+  <!-- PROVIDER SIGNUP -->
+  <div class="screen" id="screen-provider-signup">
+    <div class="page-header" style="background:transparent;border:none;position:absolute;z-index:50"><button class="back-btn" onclick="navigateTo('onboarding')"><i class="fas fa-arrow-left"></i></button><h2 style="color:white">Register</h2></div>
+    <div class="auth-top"><h1>Become a Provider</h1><p>Start earning by offering services</p></div>
+    <div class="auth-form">
+      <div class="form-group"><label>Full Name</label><div class="form-input"><i class="fas fa-user"></i><input type="text" id="provider-signup-name" placeholder="Ahmed Khan"></div></div>
+      <div class="form-group"><label>Phone Number</label><div class="form-input"><i class="fas fa-phone"></i><input type="tel" id="provider-signup-phone" placeholder="+92 300 1112233"></div></div>
+      <div class="form-group"><label>Service Area (Karachi)</label><div class="form-input"><i class="fas fa-location-dot"></i><input type="text" id="provider-signup-location" placeholder="Gulshan-e-Iqbal, Karachi"></div></div>
+      <div class="form-group"><label>Hourly Rate (PKR)</label><div class="form-input"><i class="fas fa-rupee-sign"></i><input type="number" id="provider-signup-rate" value="1500"></div></div>
+      <div class="form-group"><label>Select Services</label><div class="chips-wrap" id="provider-services-chips"></div></div>
+      <div class="form-group"><label>Email</label><div class="form-input"><i class="fas fa-envelope"></i><input type="email" id="provider-signup-email" placeholder="your@email.com"></div></div>
+      <div class="form-group"><label>Password</label><div class="form-input"><i class="fas fa-lock"></i><input type="password" id="provider-signup-pass" placeholder="Min 6 characters"></div></div>
+      <button class="btn-primary" onclick="handleProviderSignup()"><i class="fas fa-user-plus"></i> Register</button>
+    </div>
+  </div>
+
+  <!-- ADMIN LOGIN -->
+  <div class="screen" id="screen-admin-login">
+    <div class="page-header" style="background:transparent;border:none;position:absolute;z-index:50"><button class="back-btn" onclick="navigateTo('onboarding')"><i class="fas fa-arrow-left"></i></button><h2 style="color:white">Admin Login</h2></div>
+    <div class="auth-top"><h1>Admin Access</h1><p>Manage platform & providers</p></div>
+    <div class="auth-form">
+      <div class="form-group"><label>Email</label><div class="form-input"><i class="fas fa-envelope"></i><input type="email" id="admin-login-email" value="admin@servicehub.pk"></div></div>
+      <div class="form-group"><label>Password</label><div class="form-input"><i class="fas fa-lock"></i><input type="password" id="admin-login-pass" value="admin123"></div></div>
+      <button class="btn-primary" onclick="handleAdminLogin()"><i class="fas fa-shield"></i> Access Dashboard</button>
+      <div style="margin-top:16px;text-align:center;font-size:13px;color:var(--text-light)">Demo: admin@servicehub.pk / admin123</div>
+    </div>
+  </div>
+
+  <!-- USER HOME -->
+  <div class="screen" id="screen-user-main">
+    <div class="hero-banner">
+      <div style="font-size:14px;color:rgba(255,255,255,0.6);margin-bottom:4px"><i class="fas fa-map-pin"></i> Karachi, Sindh</div>
+      <h1>Find a trusted<br>Karachi professional</h1>
+      <div class="hero-search"><i class="fas fa-search"></i><input type="text" placeholder="Plumber, electrician, mechanic..." oninput="filterProviders(this.value)"></div>
+    </div>
+    <div class="section-header"><h2>Service Categories</h2><span class="see-all" style="font-size:13px;color:var(--primary);font-weight:600">See All</span></div>
+    <div class="cats-scroll" id="category-chips"></div>
+    <div class="section-header"><h2>Karachi's Top Rated</h2><span class="see-all" style="font-size:13px;color:var(--primary);font-weight:600">Search All</span></div>
+    <div class="provider-grid" id="provider-list"></div>
+    <div class="bottom-nav">
+      <div class="nav-item active" onclick="switchUserTab(0)"><i class="fas fa-compass"></i>Explore</div>
+      <div class="nav-item" onclick="switchUserTab(1)"><i class="fas fa-calendar-check"></i>Bookings</div>
+      <div class="nav-item" onclick="switchUserTab(2)"><i class="fas fa-user-circle"></i>Profile</div>
+    </div>
+  </div>
+
+  <!-- USER BOOKINGS -->
+  <div class="screen" id="screen-user-bookings">
+    <div class="page-header"><h2>My Bookings</h2></div>
+    <div id="user-bookings-list" style="padding:8px 16px 80px"></div>
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="switchUserTab(0)"><i class="fas fa-compass"></i>Explore</div>
+      <div class="nav-item active" onclick="switchUserTab(1)"><i class="fas fa-calendar-check"></i>Bookings</div>
+      <div class="nav-item" onclick="switchUserTab(2)"><i class="fas fa-user-circle"></i>Profile</div>
+    </div>
+  </div>
+
+  <!-- USER PROFILE -->
+  <div class="screen" id="screen-user-profile">
+    <div class="page-header"><h2>My Profile</h2></div>
+    <div id="user-profile-content"></div>
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="switchUserTab(0)"><i class="fas fa-compass"></i>Explore</div>
+      <div class="nav-item" onclick="switchUserTab(1)"><i class="fas fa-calendar-check"></i>Bookings</div>
+      <div class="nav-item active" onclick="switchUserTab(2)"><i class="fas fa-user-circle"></i>Profile</div>
+    </div>
+  </div>
+
+  <!-- BOOK SERVICE -->
+  <div class="screen" id="screen-book-service">
+    <div class="page-header"><button class="back-btn" onclick="showUserScreen()"><i class="fas fa-arrow-left"></i></button><h2>Book Service</h2></div>
+    <div id="book-service-content" style="padding:0 0 80px"></div>
+  </div>
+
+  <!-- REVIEW -->
+  <div class="screen" id="screen-review-booking">
+    <div class="page-header"><button class="back-btn" onclick="showUserScreen()"><i class="fas fa-arrow-left"></i></button><h2>Rate Service</h2></div>
+    <div style="padding:20px;text-align:center">
+      <h2 style="margin:24px 0 8px;font-size:24px;font-weight:700">How was your experience?</h2>
+      <p style="color:var(--text-secondary);font-size:14px;margin-bottom:24px">Your feedback helps other Karachi customers</p>
+      <div class="stars" id="review-stars">
+        <i class="fas fa-star active" onclick="setRating(1)"></i><i class="fas fa-star active" onclick="setRating(2)"></i>
+        <i class="fas fa-star active" onclick="setRating(3)"></i><i class="fas fa-star active" onclick="setRating(4)"></i>
+        <i class="fas fa-star active" onclick="setRating(5)"></i>
+      </div>
+      <div style="color:var(--text-secondary);margin-bottom:24px">Rating: <span id="rating-display" style="font-weight:700;color:var(--primary)">5</span> out of 5</div>
+      <div class="form-group"><label>Your Feedback</label><textarea id="review-comment" style="width:100%;padding:14px;border:2px solid var(--border);border-radius:12px;min-height:100px;font-family:'Inter',sans-serif;font-size:14px;outline:none">Excellent service! Very professional. Paid cash. Highly recommend!</textarea></div>
+      <button class="btn-primary" onclick="submitReview()"><i class="fas fa-star"></i> Submit Review</button>
+    </div>
+  </div>
+
+  <!-- PROVIDER MAIN -->
+  <div class="screen" id="screen-provider-main">
+    <div class="page-header"><h2>Job Requests</h2></div>
+    <div class="provider-filter-row" id="provider-filter-row">
+      <button class="filter-chip active" onclick="filterProviderJobs('all',this)">All</button>
+      <button class="filter-chip" onclick="filterProviderJobs('pending',this)">Pending</button>
+      <button class="filter-chip" onclick="filterProviderJobs('accepted',this)">Accepted</button>
+      <button class="filter-chip" onclick="filterProviderJobs('inProgress',this)">In Progress</button>
+      <button class="filter-chip" onclick="filterProviderJobs('completed',this)">Completed</button>
+    </div>
+    <div id="provider-jobs-list" style="padding:0 8px 80px"></div>
+    <div class="bottom-nav">
+      <div class="nav-item active" onclick="switchProviderTab(0)"><i class="fas fa-briefcase"></i>Jobs</div>
+      <div class="nav-item" onclick="switchProviderTab(1)"><i class="fas fa-wallet"></i>Earnings</div>
+      <div class="nav-item" onclick="switchProviderTab(2)"><i class="fas fa-id-card"></i>Profile</div>
+    </div>
+  </div>
+
+  <!-- PROVIDER EARNINGS -->
+  <div class="screen" id="screen-provider-earnings">
+    <div class="page-header"><h2>Earnings</h2></div>
+    <div id="provider-earnings-content"></div>
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="switchProviderTab(0)"><i class="fas fa-briefcase"></i>Jobs</div>
+      <div class="nav-item active" onclick="switchProviderTab(1)"><i class="fas fa-wallet"></i>Earnings</div>
+      <div class="nav-item" onclick="switchProviderTab(2)"><i class="fas fa-id-card"></i>Profile</div>
+    </div>
+  </div>
+
+  <!-- PROVIDER PROFILE -->
+  <div class="screen" id="screen-provider-profile">
+    <div class="page-header"><h2>My Profile</h2></div>
+    <div id="provider-profile-content"></div>
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="switchProviderTab(0)"><i class="fas fa-briefcase"></i>Jobs</div>
+      <div class="nav-item" onclick="switchProviderTab(1)"><i class="fas fa-wallet"></i>Earnings</div>
+      <div class="nav-item active" onclick="switchProviderTab(2)"><i class="fas fa-id-card"></i>Profile</div>
+    </div>
+  </div>
+
+  <!-- ADMIN -->
+  <div class="screen" id="screen-admin-main">
+    <div class="page-header"><h2>Admin Dashboard</h2><button class="header-action" onclick="handleLogout()" style="background:none;border:none;color:var(--secondary);font-size:18px;cursor:pointer"><i class="fas fa-sign-out-alt"></i></button></div>
+    <div style="padding:0 16px 80px">
+      <div style="padding:20px 0 8px"><h1 style="font-size:22px;font-weight:800">Admin Controls</h1></div>
+      <div class="admin-card" onclick="navigateTo('admin-providers')" style="background:white;border-radius:16px;padding:18px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,0.06);border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;gap:16px">
+        <div style="width:48px;height:48px;border-radius:12px;background:var(--gradient-card);display:flex;align-items:center;justify-content:center;color:var(--primary);font-size:22px"><i class="fas fa-users"></i></div>
+        <div><h3 style="font-size:15px;font-weight:700">Manage Providers</h3><p style="font-size:12px;color:var(--text-secondary)">Approve or reject provider registrations</p></div>
+        <i class="fas fa-chevron-right" style="margin-left:auto;color:var(--text-light)"></i>
+      </div>
+      <div class="admin-card" onclick="showToast('Bookings view coming soon','info')" style="background:white;border-radius:16px;padding:18px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,0.06);border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;gap:16px">
+        <div style="width:48px;height:48px;border-radius:12px;background:var(--gradient-card);display:flex;align-items:center;justify-content:center;color:var(--primary);font-size:22px"><i class="fas fa-calendar-alt"></i></div>
+        <div><h3 style="font-size:15px;font-weight:700">View Bookings</h3><p style="font-size:12px;color:var(--text-secondary)">Monitor all service bookings</p></div>
+        <i class="fas fa-chevron-right" style="margin-left:auto;color:var(--text-light)"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN PROVIDERS -->
+  <div class="screen" id="screen-admin-providers">
+    <div class="page-header"><button class="back-btn" onclick="navigateTo('admin-main')"><i class="fas fa-arrow-left"></i></button><h2>Manage Providers</h2></div>
+    <div id="admin-providers-list" style="padding:8px 16px 80px"></div>
+  </div>
+
+  <div id="toast-container" style="position:fixed;bottom:100px;left:50%;transform:translateX(-50%);z-index:9999;pointer-events:none"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// KARACHI MARKET DATA — All PKR, all Karachi locations
+// ═══════════════════════════════════════════════════════════════════
+const SERVICE_CATEGORIES = ['Plumber','Electrician','Mechanic','Carpenter','Painter','AC Technician','Cleaning','Home Repair','Appliance Repair','Locksmith'];
+const CATEGORY_ICONS = {'Plumber':'fa-wrench','Electrician':'fa-bolt','Mechanic':'fa-car','Carpenter':'fa-hammer','Painter':'fa-paint-roller','AC Technician':'fa-snowflake','Cleaning':'fa-broom','Home Repair':'fa-tools','Appliance Repair':'fa-tv','Locksmith':'fa-key'};
+const KARACHI_AREAS = ['Gulshan-e-Iqbal','Clifton','DHA Phase 5','Saddar','Nazimabad','North Nazimabad','Korangi','Shah Faisal','Malir','Landhi'];
+
+const MOCK_PROVIDERS = [
+  { id:'pk1', name:'Ahmed Plumbing & Electrical', services:['Plumber','Electrician'], hourlyRate:1500, rating:4.8, reviews:34, bio:'Expert plumber & electrician. 15 years in Gulshan. Emergency callout available. Cash & JazzCash accepted.', location:'Gulshan-e-Iqbal, Karachi', isApproved:true },
+  { id:'pk2', name:'Zainab Premium Cleaning', services:['Cleaning','Painter','Home Repair'], hourlyRate:1200, rating:4.9, reviews:56, bio:'Eco-friendly cleaning. Serving Clifton, DHA & Saddar. Credit card accepted via Paymob.', location:'Clifton, Karachi', isApproved:true },
+  { id:'pk3', name:'Imran Auto & AC Works', services:['Mechanic','AC Technician'], hourlyRate:2000, rating:4.7, reviews:28, bio:'AC specialist & auto mechanic. 12 years. Same-day service. JazzCash & Easypaisa accepted.', location:'Saddar, Karachi', isApproved:true },
+  { id:'pk4', name:'Rashid Carpenter & Painter', services:['Carpenter','Painter','Home Repair'], hourlyRate:800, rating:4.6, reviews:41, bio:'Master carpenter 20 years exp. Custom furniture. Free estimates. Serving Nazimabad area.', location:'Nazimabad, Karachi', isApproved:true },
+  { id:'pk5', name:'Saima Home Appliances Repair', services:['Appliance Repair','Locksmith'], hourlyRate:1000, rating:4.5, reviews:19, bio:'Washing machine, fridge, AC repair. 24/7 locksmith. Easypaisa accepted. North Nazimabad.', location:'North Nazimabad, Karachi', isApproved:true },
+  { id:'pk6', name:'Tariq Electrician', services:['Electrician','Home Repair'], hourlyRate:1000, rating:4.7, reviews:31, bio:'Licensed electrician. All wiring, switchboard & security camera installation. Korangi & Malir.', location:'Korangi, Karachi', isApproved:true }
+];
+
+let MOCK_BOOKINGS = [
+  { id:'bkhi1', userId:'user1', providerId:'pk1', serviceType:'Plumber', description:'Bathroom faucet leaking — DHA Phase 5. Need urgent replacement.', scheduledTime:'2026-06-01T10:00', estimatedCost:3000, finalCost:3500, status:'completed', location:'DHA Phase 5, Karachi', createdAt:'2026-05-28T10:00', paymentMethod:'CASH' },
+  { id:'bkhi2', userId:'user1', providerId:'pk2', serviceType:'Cleaning', description:'Full 3-bed apartment deep clean. Clifton. Pay via credit card.', scheduledTime:'2026-06-05T14:00', estimatedCost:5000, finalCost:4800, status:'completed', location:'Clifton, Karachi', createdAt:'2026-05-25T10:00', paymentMethod:'CREDIT_CARD' },
+  { id:'bkhi3', userId:'user1', providerId:'pk3', serviceType:'AC Technician', description:'Split AC not cooling — gas refill needed. Saddar office.', scheduledTime:'2026-06-10T09:00', estimatedCost:4000, finalCost:0, status:'pending', location:'Saddar, Karachi', createdAt:'2026-05-20T10:00' },
+  { id:'bkhi4', userId:'user1', providerId:'pk4', serviceType:'Carpenter', description:'Custom bookshelf — 3 shelves, 6ft height. Nazimabad.', scheduledTime:'2026-06-15T10:00', estimatedCost:8000, finalCost:0, status:'accepted', location:'Nazimabad, Karachi', createdAt:'2026-05-18T10:00' }
+];
+
+const MOCK_PAYMENTS = [
+  { id:'paykhi1', bookingId:'bkhi2', userId:'user1', providerId:'pk2', amount:4800, commission:720, method:'CREDIT_CARD', status:'completed', createdAt:'2026-06-05T18:00', gatewayRef:'pmk-iframe-20260605' }
+];
+
+// ── STATE ──
+let currentUser = null, currentRole = null, currentUserTab = 0, currentProviderTab = 0, selectedCategory = '';
+let selectedRating = 5, editingReviewBooking = null, providerJobFilter = 'all';
+let providerSelectedServices = [];
+
+const providerLoginUser = { id:'prov1', name:'Ahmed Plumbing & Electrical', email:'ahmed.plumbing@example.com', phone:'+92 300 1112233', location:'Gulshan-e-Iqbal, Karachi', services:['Plumber','Electrician'], hourlyRate:1500, rating:4.8, reviews:34, bio:'Expert plumber 15 years.', totalJobs:87, totalEarnings:130500, walletBalance:-350, totalCommission:19575, isApproved:true };
+const adminUser = { name:'Admin' };
+
+setTimeout(() => navigateTo('onboarding'), 2600);
+
+function navigateTo(screen) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  const el = document.getElementById('screen-'+screen);
+  if (el) el.classList.add('active');
+  const r = { 'user-main':renderUserMain, 'user-bookings':renderUserBookings, 'user-profile':renderUserProfile, 'provider-main':renderProviderJobs, 'provider-earnings':renderProviderEarnings, 'provider-profile':renderProviderProfile, 'admin-providers':renderAdminProviders };
+  if (r[screen]) r[screen]();
+}
+function showUserScreen() { navigateTo(['user-main','user-bookings','user-profile'][currentUserTab]); }
+
+// ── AUTH ──
+function handleUserLogin() {
+  currentUser = { id:'user1', name:'Hassan Ahmed', email:document.getElementById('user-login-email').value, phone:'+92 321 2345678', location:'DHA Phase 5, Karachi', rating:4.7, totalReviews:15, createdAt:new Date() };
+  currentRole='user'; navigateTo('user-main'); showToast('Welcome back, Hassan!','success');
+}
+function handleUserSignup() {
+  currentUser = { id:'u'+Date.now(), name:document.getElementById('user-signup-name').value||'New User', email:document.getElementById('user-signup-email').value||'user@example.com', phone:document.getElementById('user-signup-phone').value||'+92 300 0000000', location:document.getElementById('user-signup-location').value||'Karachi', rating:0, totalReviews:0, createdAt:new Date() };
+  currentRole='user'; navigateTo('user-main'); showToast('Account created! Khush amdeed!','success');
+}
+function handleProviderLogin() {
+  currentRole='provider'; currentUser={...providerLoginUser}; navigateTo('provider-main');
+  showToast('Welcome back, Ahmed!','success');
+}
+function handleProviderSignup() {
+  currentRole='provider';
+  currentUser = { id:'p'+Date.now(), name:document.getElementById('provider-signup-name').value||'New Provider', email:document.getElementById('provider-signup-email').value||'provider@example.com', phone:document.getElementById('provider-signup-phone').value||'+92 300 0000000', location:document.getElementById('provider-signup-location').value||'Karachi', services:providerSelectedServices.length?providerSelectedServices:['Plumber'], hourlyRate:parseFloat(document.getElementById('provider-signup-rate').value)||1500, rating:0, reviews:0, bio:'New provider', totalJobs:0, totalEarnings:0, walletBalance:0, totalCommission:0, isApproved:false };
+  navigateTo('provider-main'); showToast('Registration submitted! Awaiting admin approval.','success');
+}
+function handleAdminLogin() {
+  if (document.getElementById('admin-login-email').value.includes('admin@') && document.getElementById('admin-login-pass').value==='admin123') {
+    currentRole='admin'; currentUser=adminUser; navigateTo('admin-main'); showToast('Welcome to Admin Dashboard','success');
+  } else showToast('Invalid admin credentials','error');
+}
+function handleLogout() { currentUser=null; currentRole=null; navigateTo('onboarding'); showToast('Logged out successfully','info'); }
+
+// ── SERVICE CHIPS ──
+function renderProviderServiceChips() {
+  const c=document.getElementById('provider-services-chips'); if(!c)return;
+  c.innerHTML = SERVICE_CATEGORIES.map(s=>`<button class="chip ${providerSelectedServices.includes(s)?'selected':''}" onclick="togglePService('${s}')">${s}</button>`).join('');
+}
+function togglePService(s) {
+  const i=providerSelectedServices.indexOf(s); i>-1?providerSelectedServices.splice(i,1):providerSelectedServices.push(s);
+  renderProviderServiceChips();
+}
+
+// ── USER HOME ──
+function renderUserMain() { renderCategoryChips(); renderProviders(); }
+function renderCategoryChips() {
+  document.getElementById('category-chips').innerHTML=SERVICE_CATEGORIES.map(c=>`<button class="cat-chip ${selectedCategory===c?'active':''}" onclick="selectCategory('${c}')"><i class="fas ${CATEGORY_ICONS[c]}"></i>${c}</button>`).join('');
+}
+function selectCategory(cat) { selectedCategory=selectedCategory===cat?'':cat; renderCategoryChips(); renderProviders(); }
+function filterProviders(q) {
+  const list=document.getElementById('provider-list');
+  const f=MOCK_PROVIDERS.filter(p=>(p.name.toLowerCase().includes(q.toLowerCase())||p.services.some(s=>s.toLowerCase().includes(q.toLowerCase()))||p.location.toLowerCase().includes(q.toLowerCase()))&&(selectedCategory===''||p.services.includes(selectedCategory)));
+  list.innerHTML=f.length?f.map(providerCardHTML).join(''):'<div class="empty-state"><i class="fas fa-search"></i><h3>Koi provider nahi mila</h3><p>Try adjusting your search</p></div>';
+}
+function renderProviders() {
+  const list=document.getElementById('provider-list');
+  const f=selectedCategory?MOCK_PROVIDERS.filter(p=>p.services.includes(selectedCategory)):MOCK_PROVIDERS;
+  list.innerHTML=f.length?f.map(providerCardHTML).join(''):'<div class="empty-state"><i class="fas fa-users-slash"></i><h3>No providers</h3></div>';
+}
+function providerCardHTML(p) {
+  return `<div class="provider-card">
+    <div class="top-row">
+      <div class="avatar"><i class="fas fa-user"></i></div>
+      <div class="info">
+        <h3>${p.name}</h3>
+        <div style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-secondary)"><i class="fas fa-star" style="color:#FDCB6E;font-size:12px"></i> ${p.rating} (${p.reviews}) <span>•</span> ${p.location.split(',')[0]}</div>
+        <div style="font-size:15px;font-weight:700;color:var(--primary);margin-top:2px">Rs ${p.hourlyRate.toLocaleString()}<span style="font-weight:400;font-size:12px;color:var(--text-light)">/hr</span></div>
+      </div>
+    </div>
+    <div class="specialties">${p.services.map(s=>`<span class="tag">${s}</span>`).join('')}</div>
+    <div style="display:flex;gap:6px;margin-top:10px"><span class="paymob-badge"><i class="fas fa-mobile-alt"></i> JazzCash</span><span class="paymob-badge"><i class="fas fa-credit-card"></i> Paymob</span></div>
+    <button class="book-btn" onclick="openBookService('${p.id}')"><i class="fas fa-calendar-plus"></i> Book Now</button>
+  </div>`;
+}
+
+// ── BOOK SERVICE ──
+function openBookService(id) {
+  const p=MOCK_PROVIDERS.find(x=>x.id===id); if(!p)return; navigateTo('book-service');
+  const today=new Date().toISOString().split('T')[0];
+  document.getElementById('book-service-content').innerHTML=`
+    <div style="display:flex;gap:16px;padding:20px;margin:16px;background:white;border-radius:16px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.07)">
+      <div style="width:64px;height:64px;border-radius:50%;background:var(--gradient-main);display:flex;align-items:center;justify-content:center;color:white;font-size:28px"><i class="fas fa-user"></i></div>
+      <div><h3 style="font-size:17px;font-weight:700">${p.name}</h3><div style="font-size:13px;color:var(--text-secondary)"><i class="fas fa-star" style="color:#FDCB6E"></i> ${p.rating} • Rs ${p.hourlyRate.toLocaleString()}/hr</div></div>
+    </div>
+    <div style="padding:0 20px">
+      <div class="form-group"><label>Service</label><select id="book-service-select" style="width:100%;padding:14px;border:2px solid var(--border);border-radius:12px;font-size:14px;font-family:'Inter',sans-serif">${p.services.map(s=>`<option value="${s}">${s}</option>`).join('')}</select></div>
+      <div class="form-group"><label>Date</label><input type="date" id="book-date" value="${today}" style="width:100%;padding:14px;border:2px solid var(--border);border-radius:12px"></div>
+      <div class="form-group"><label>Time</label><input type="time" id="book-time" value="10:00" style="width:100%;padding:14px;border:2px solid var(--border);border-radius:12px"></div>
+      <div class="form-group"><label>Description</label><textarea id="book-desc" style="width:100%;padding:14px;border:2px solid var(--border);border-radius:12px;min-height:80px;font-family:'Inter',sans-serif">Need help at my home in Karachi</textarea></div>
+      <div class="form-group"><label>Location (Karachi area)</label><input type="text" id="book-location" value="${currentUser?.location||'Karachi'}" style="width:100%;padding:14px;border:2px solid var(--border);border-radius:12px"></div>
+      <div style="margin-bottom:12px;display:flex;gap:8px"><span class="paymob-badge"><i class="fas fa-money-bill-wave"></i> Cash</span><span class="paymob-badge"><i class="fas fa-credit-card"></i> Credit Card (Paymob)</span><span class="paymob-badge"><i class="fas fa-mobile"></i> JazzCash</span></div>
+      <div style="background:var(--gradient-primary);border-radius:16px;padding:20px;display:flex;justify-content:space-between;color:white;margin-bottom:20px">
+        <div><div style="font-size:14px;opacity:0.8">Estimated Cost</div><div style="font-size:12px;opacity:0.6">15% commission applies</div></div>
+        <div style="font-size:24px;font-weight:800">Rs ${p.hourlyRate.toLocaleString()}</div>
+      </div>
+      <button class="btn-primary" onclick="submitBooking('${p.id}','${p.name}','${p.hourlyRate}')"><i class="fas fa-check-circle"></i> Confirm Booking</button>
+    </div>`;
+}
+function submitBooking(pid,pname,rate) {
+  if(!document.getElementById('book-desc').value||!document.getElementById('book-location').value){showToast('Please fill all fields','error');return}
+  MOCK_BOOKINGS.unshift({id:'bk'+Date.now(),userId:currentUser?.id||'user1',providerId:pid,serviceType:document.getElementById('book-service-select').value,description:document.getElementById('book-desc').value,scheduledTime:document.getElementById('book-date').value+'T'+document.getElementById('book-time').value,estimatedCost:parseFloat(rate),finalCost:0,status:'pending',location:document.getElementById('book-location').value,createdAt:new Date().toISOString()});
+  showToast('Booking sent to '+pname+'! Pay cash or use Paymob on completion.','success');
+  setTimeout(()=>showUserScreen(),500);
+}
+
+// ── USER BOOKINGS ──
+function renderUserBookings() {
+  const c=document.getElementById('user-bookings-list');
+  const bs=MOCK_BOOKINGS.filter(b=>b.userId===(currentUser?.id||'user1'));
+  if(!bs.length){c.innerHTML='<div class="empty-state" style="padding-top:80px"><i class="fas fa-calendar-alt"></i><h3>No bookings yet</h3><p>Book a Karachi service to get started</p></div>';return}
+  const colors={pending:'linear-gradient(135deg,#FDCB6E,#E17055)',accepted:'linear-gradient(135deg,#74B9FF,#0984E3)',inProgress:'linear-gradient(135deg,#A29BFE,#6C5CE7)',completed:'linear-gradient(135deg,#55EFC4,#00B894)',cancelled:'linear-gradient(135deg,#FF7675,#D63031)'};
+  c.innerHTML=bs.map(b=>{
+    const pr=MOCK_PROVIDERS.find(x=>x.id===b.providerId);
+    const pmtBadge = b.paymentMethod ? (b.paymentMethod==='CASH'?'<span class="paymob-badge"><i class="fas fa-money-bill-wave"></i> Cash</span>':'<span class="paymob-badge"><i class="fas fa-credit-card"></i> Paymob</span>') : '';
+    return `<div class="booking-card">
+      <div class="top-row"><div><h3>${b.serviceType} <span style="font-size:13px;font-weight:400;color:var(--text-secondary)">with ${pr?.name||'Provider'}</span></h3></div>
+        <span class="status-badge" style="background:${colors[b.status]||'#999'}">${b.status.toUpperCase()}</span></div>
+      ${pmtBadge ? '<div style="margin-bottom:6px">'+pmtBadge+'</div>' : ''}
+      <div class="detail-row"><i class="fas fa-align-left"></i>${b.description}</div>
+      <div class="detail-row"><i class="fas fa-location-dot"></i>${b.location}</div>
+      <div class="detail-row"><i class="fas fa-clock"></i>${formatDate(b.scheduledTime)}</div>
+      <div class="bottom-row">
+        <span class="cost">Rs ${(b.finalCost||b.estimatedCost).toLocaleString()}</span>
+        <div style="display:flex;gap:8px">
+          ${b.status==='completed'?`<button class="action-btn" onclick="openReviewBooking('${b.id}')"><i class="fas fa-star"></i> Review</button>`:''}
+          ${b.status==='pending'?`<button class="action-btn danger" onclick="cancelBooking('${b.id}')"><i class="fas fa-times"></i> Cancel</button>`:''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function cancelBooking(id){const b=MOCK_BOOKINGS.find(x=>x.id===id);if(b)b.status='cancelled';renderUserBookings();showToast('Booking cancelled','info')}
+
+// ── REVIEW ──
+function openReviewBooking(id){editingReviewBooking=MOCK_BOOKINGS.find(x=>x.id===id);navigateTo('review-booking')}
+function setRating(v){selectedRating=v;document.querySelectorAll('.stars i').forEach((el,i)=>{el.classList.toggle('active',i<v)});document.getElementById('rating-display').textContent=v}
+function submitReview(){
+  const comment=document.getElementById('review-comment').value;
+  if(!comment){showToast('Please write a comment','error');return}
+  const p=MOCK_PROVIDERS.find(x=>x.id===editingReviewBooking?.providerId);
+  if(p){p.reviews++;p.rating=Math.round((p.rating*(p.reviews-1)+selectedRating)/p.reviews*10)/10}
+  showToast('Thank you for your review!','success');
+  setTimeout(()=>showUserScreen(),500);
+}
+
+// ── USER PROFILE ──
+function renderUserProfile(){
+  const u=currentUser;if(!u)return;
+  document.getElementById('user-profile-content').innerHTML=`
+    <div class="profile-cover"><div class="avatar-lg"><i class="fas fa-user"></i></div><h2>${u.name}</h2><div class="rating" style="color:rgba(255,255,255,0.7);font-size:14px;margin-top:4px"><i class="fas fa-star" style="color:#FDCB6E"></i> ${(u.rating||0).toFixed(1)} (${u.totalReviews||0} reviews)</div></div>
+    <div class="profile-card">
+      <div class="profile-row"><i class="fas fa-envelope"></i><div class="row-content"><div class="label">Email</div><div class="value">${u.email}</div></div></div>
+      <div class="profile-row"><i class="fas fa-phone"></i><div class="row-content"><div class="label">Phone</div><div class="value">${u.phone}</div></div></div>
+      <div class="profile-row"><i class="fas fa-location-dot"></i><div class="row-content"><div class="label">Location</div><div class="value">${u.location}</div></div></div>
+      <div class="profile-row"><i class="fas fa-calendar"></i><div class="row-content"><div class="label">Member Since</div><div class="value">${u.createdAt?new Date(u.createdAt).toLocaleDateString('en-US',{month:'long',year:'numeric'}):'Today'}</div></div></div>
+    </div>
+    <div style="padding:0 16px;margin-top:8px">
+      <button class="btn-primary" style="background:linear-gradient(135deg,#FF6B6B,#EE5A24);margin-top:8px" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    </div>`;
+}
+
+// ── PROVIDER JOBS ──
+function renderProviderJobs(){
+  const c=document.getElementById('provider-jobs-list');
+  let bs=MOCK_BOOKINGS.filter(b=>b.providerId===(currentUser?.id||'prov1'));
+  if(providerJobFilter!=='all')bs=bs.filter(b=>b.status===providerJobFilter);
+  if(!bs.length){c.innerHTML='<div class="empty-state" style="padding-top:60px"><i class="fas fa-briefcase"></i><h3>No jobs found</h3></div>';return}
+  const colors={pending:'linear-gradient(135deg,#FDCB6E,#E17055)',accepted:'linear-gradient(135deg,#74B9FF,#0984E3)',inProgress:'linear-gradient(135deg,#A29BFE,#6C5CE7)',completed:'linear-gradient(135deg,#55EFC4,#00B894)',cancelled:'linear-gradient(135deg,#FF7675,#D63031)'};
+  c.innerHTML=bs.map(b=>`<div class="booking-card">
+    <div class="top-row"><div><h3>${b.serviceType} <span style="font-size:12px;color:var(--text-light)">Rs ${b.estimatedCost.toLocaleString()}</span></h3></div><span class="status-badge" style="background:${colors[b.status]||'#999'}">${b.status.toUpperCase()}</span></div>
+    <div class="detail-row"><i class="fas fa-align-left"></i>${b.description}</div>
+    <div class="detail-row"><i class="fas fa-location-dot"></i>${b.location}</div>
+    <div class="detail-row"><i class="fas fa-clock"></i>${formatDate(b.scheduledTime)}</div>
+    ${b.paymentMethod?`<div style="margin:4px 0"><span class="paymob-badge"><i class="fas ${b.paymentMethod==='CASH'?'fa-money-bill-wave':'fa-credit-card'}"></i> ${b.paymentMethod}</span></div>`:''}
+    <div class="bottom-row">
+      <span class="cost">Rs ${b.estimatedCost.toLocaleString()}</span>
+      <div style="display:flex;gap:8px">
+        ${b.status==='pending'?`<button class="action-btn success" onclick="updateBStatus('${b.id}','accepted')"><i class="fas fa-check"></i> Accept</button><button class="action-btn danger" onclick="updateBStatus('${b.id}','cancelled')"><i class="fas fa-times"></i> Decline</button>`:''}
+        ${b.status==='accepted'?`<button class="action-btn" style="background:linear-gradient(135deg,#74B9FF,#0984E3)" onclick="updateBStatus('${b.id}','inProgress')"><i class="fas fa-play"></i> Start</button>`:''}
+        ${b.status==='inProgress'?`<button class="action-btn success" onclick="updateBStatus('${b.id}','completed')"><i class="fas fa-check-double"></i> Complete</button>`:''}
+      </div>
+    </div>
+  </div>`).join('');
+}
+function filterProviderJobs(status,btn){
+  providerJobFilter=status;
+  document.querySelectorAll('#provider-filter-row .filter-chip').forEach(c=>c.classList.remove('active'));
+  if(btn)btn.classList.add('active');renderProviderJobs();
+}
+function updateBStatus(id,status){
+  const b=MOCK_BOOKINGS.find(x=>x.id===id);if(!b)return;
+  b.status=status;
+  if(status==='completed'){
+    b.finalCost=b.estimatedCost;
+    MOCK_PAYMENTS.push({id:'pay'+Date.now(),bookingId:id,userId:b.userId,providerId:b.providerId,amount:b.estimatedCost,commission:b.estimatedCost*0.15,status:'completed',createdAt:new Date().toISOString()});
+    if(currentUser){currentUser.totalEarnings=(currentUser.totalEarnings||0)+b.estimatedCost;currentUser.totalJobs=(currentUser.totalJobs||0)+1;currentUser.walletBalance=(currentUser.walletBalance||0)-(b.estimatedCost*0.15)}
+  }
+  renderProviderJobs();
+  const msgs={accepted:'Job accepted!',cancelled:'Job declined',inProgress:'Work started!',completed:'Job completed! Rs '+(b.estimatedCost*0.15).toLocaleString()+' commission debited from wallet.'};
+  showToast(msgs[status]||'Updated!','success');
+}
+
+// ── PROVIDER EARNINGS ──
+function renderProviderEarnings(){
+  const c=document.getElementById('provider-earnings-content');
+  const total=MOCK_PAYMENTS.filter(p=>p.providerId===(currentUser?.id||'prov1')&&p.status==='completed').reduce((s,p)=>s+p.amount,0);
+  const totalCommission=MOCK_PAYMENTS.filter(p=>p.providerId===(currentUser?.id||'prov1')&&p.status==='completed').reduce((s,p)=>s+(p.commission||p.amount*0.15),0);
+  const payments=MOCK_PAYMENTS.filter(p=>p.providerId===(currentUser?.id||'prov1'));
+  const walletBal=currentUser?.walletBalance||0;
+  c.innerHTML=`
+    <div class="earnings-hero"><div style="opacity:0.8">Total Earnings</div><div class="earnings-amount">Rs ${total.toLocaleString()}</div><div style="font-size:12px;opacity:0.6;margin-top:4px">Commission paid: Rs ${totalCommission.toLocaleString()} to Zenith LLC</div></div>
+    ${walletBal<0?`<div class="wallet-warn"><i class="fas fa-exclamation-triangle"></i> Wallet balance: Rs ${walletBal.toLocaleString()} (debt). 15% commission deducted from cash jobs. Top up via JazzCash if below Rs -500.</div>`:''}
+    <div class="section-header"><h2>Commission History</h2></div>
+    <div style="padding:0 16px">${payments.length?payments.map(p=>`
+      <div class="booking-card" style="margin:0 0 8px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><div style="font-weight:600">Booking ${p.bookingId.slice(0,8)}...</div><div style="font-size:12px;color:var(--text-secondary)">${new Date(p.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div></div>
+          <div style="text-align:right"><div style="font-weight:700;color:var(--primary);font-size:16px">Rs ${p.amount.toLocaleString()}</div><span class="paymob-badge">15%: Rs ${(p.commission||p.amount*0.15).toLocaleString()}</span></div>
+        </div>
+      </div>`).join(''):'<div class="empty-state" style="padding:30px 0"><i class="fas fa-wallet"></i><h3>No payment history</h3></div>'}</div>`;
+}
+
+// ── PROVIDER PROFILE ──
+function renderProviderProfile(){
+  const p=currentUser;if(!p)return;
+  document.getElementById('provider-profile-content').innerHTML=`
+    <div class="profile-cover"><div class="avatar-lg"><i class="fas fa-user-tie"></i></div><h2>${p.name}</h2><div style="color:rgba(255,255,255,0.7);font-size:14px;margin-top:4px"><i class="fas fa-star" style="color:#FDCB6E"></i> ${(p.rating||0).toFixed(1)} (${p.reviews||0}) • Rs ${p.hourlyRate||0}/hr</div></div>
+    <div class="verification-badge ${p.isApproved?'approved':'pending'}" style="margin-top:-12px;position:relative;z-index:3">
+      <i class="fas ${p.isApproved?'fa-check-circle':'fa-hourglass-half'}"></i> ${p.isApproved?'Verified Provider':'Awaiting Approval'}
+    </div>
+    ${p.walletBalance<0?`<div class="wallet-warn"><i class="fas fa-exclamation-triangle"></i> Wallet: Rs ${p.walletBalance} (debt). Pay via JazzCash to unlock.</div>`:''}
+    <div class="profile-card">
+      <div style="margin-bottom:12px"><div style="font-weight:600;font-size:14px">Services</div><div style="margin-top:8px">${(p.services||[]).map(s=>`<span style="display:inline-block;padding:4px 12px;background:var(--bg-alt);color:var(--primary);border-radius:6px;font-size:12px;margin-right:4px">${s}</span>`).join(' ')}</div></div>
+      <div class="profile-row"><i class="fas fa-envelope"></i><div class="row-content"><div class="label">Email</div><div class="value">${p.email}</div></div></div>
+      <div class="profile-row"><i class="fas fa-phone"></i><div class="row-content"><div class="label">Phone</div><div class="value">${p.phone}</div></div></div>
+      <div class="profile-row"><i class="fas fa-location-dot"></i><div class="row-content"><div class="label">Area</div><div class="value">${p.location}</div></div></div>
+      <div class="profile-row"><i class="fas fa-briefcase"></i><div class="row-content"><div class="label">Total Jobs</div><div class="value">${p.totalJobs||0}</div></div></div>
+      <div class="profile-row"><i class="fas fa-wallet"></i><div class="row-content"><div class="label">Wallet Balance</div><div class="value">Rs ${(p.walletBalance||0).toLocaleString()}</div></div></div>
+    </div>
+    <div style="padding:0 16px;margin-top:8px">
+      <button class="btn-primary" style="background:linear-gradient(135deg,#FF6B6B,#EE5A24)" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    </div>`;
+}
+
+function switchProviderTab(i){currentProviderTab=i;navigateTo(['provider-main','provider-earnings','provider-profile'][i])}
+function switchUserTab(i){currentUserTab=i;navigateTo(['user-main','user-bookings','user-profile'][i])}
+
+// ── ADMIN ──
+function renderAdminProviders(){
+  const c=document.getElementById('admin-providers-list');
+  const unapproved=MOCK_PROVIDERS.filter(p=>!p.isApproved);
+  const approved=MOCK_PROVIDERS.filter(p=>p.isApproved);
+  let html='';
+  if(unapproved.length){
+    html+=`<div style="margin-bottom:12px;font-weight:700;color:#E17055"><i class="fas fa-clock"></i> Pending Approval (${unapproved.length})</div>`;
+    html+=unapproved.map(p=>`<div class="booking-card"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:700">${p.name}</div><div style="font-size:13px;color:var(--text-secondary)">${p.services.join(', ')} • Rs ${p.hourlyRate.toLocaleString()}/hr</div></div><div style="display:flex;flex-direction:column;gap:6px"><button class="action-btn success" onclick="approveP('${p.id}')" style="padding:6px 14px"><i class="fas fa-check"></i></button><button class="action-btn danger" onclick="rejectP('${p.id}')" style="padding:6px 14px"><i class="fas fa-times"></i></button></div></div></div>`).join('');
+  }
+  if(approved.length){
+    html+=`<div style="margin:20px 0 12px;font-weight:700;color:#00B894"><i class="fas fa-check-circle"></i> Approved (${approved.length})</div>`;
+    html+=approved.map(p=>`<div class="booking-card"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:600">${p.name} <i class="fas fa-check-circle" style="color:#00B894"></i></div><div style="font-size:13px;color:var(--text-secondary)">${p.services.join(', ')} • ⭐ ${p.rating}</div></div><span style="font-weight:700;color:var(--primary)">Rs ${p.hourlyRate.toLocaleString()}</span></div></div>`).join('');
+  }
+  c.innerHTML=html||'<div class="empty-state" style="padding-top:60px"><i class="fas fa-users"></i><h3>No providers registered</h3></div>';
+}
+function approveP(id){const p=MOCK_PROVIDERS.find(x=>x.id===id);if(p){p.isApproved=true;showToast(p.name+' approved!','success');renderAdminProviders()}}
+function rejectP(id){const i=MOCK_PROVIDERS.findIndex(x=>x.id===id);if(i>-1){const n=MOCK_PROVIDERS[i].name;MOCK_PROVIDERS.splice(i,1);showToast(n+' rejected','info');renderAdminProviders()}}
+
+// ── UTILITIES ──
+function formatDate(d){const dt=new Date(d);return dt.toLocaleDateString('en-US',{month:'short',day:'numeric'})+' at '+dt.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}
+function showToast(msg,type='info'){
+  const container=document.getElementById('toast-container');
+  const toast=document.createElement('div');toast.className='toast '+type;toast.textContent=msg;
+  container.appendChild(toast);
+  setTimeout(()=>{toast.style.opacity='0';toast.style.transform='translateY(-10px)';toast.style.transition='all 0.3s';setTimeout(()=>toast.remove(),300)},2500);
+}
+
+renderProviderServiceChips();
+</script>
+</body>
+</html>
