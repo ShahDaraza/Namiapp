@@ -1,0 +1,233 @@
+// ===================================================================
+// ServiceHub Backend — Zenith Intercontinental LLC
+// Schema v2.0 — Hybrid Wallet Architecture
+// -------------------------------------------------------------------
+// Currency: PKR default, USD/AED dynamic support via `currency` field
+// Wallet: provider digital wallet tracks platform commission debt
+// Ledger: immutable transaction records with gross/commission/net
+// ===================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql" // swap to "mysql" or "sqlite" for local dev
+  url      = env("DATABASE_URL")
+}
+
+// ──────────────────────────────────────────────────────────────
+// USER (customers who request services)
+// ──────────────────────────────────────────────────────────────
+model User {
+  id            String       @id @default(uuid())
+  firebaseUid   String       @unique // links to Firebase Auth
+  name          String
+  email         String       @unique
+  phone         String
+  profileImage  String       @default("")
+  location      String
+  city          String?
+  countryCode   String       @default("PK") // ISO 3166-1 alpha-2
+  currency      String       @default("PKR") // PKR | USD | AED
+  rating        Float        @default(0.0)
+  totalReviews  Int          @default(0)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  bookings      Booking[]
+  reviews       Review[]
+  payments      Payment[]    @relation("UserPayments")
+}
+
+// ──────────────────────────────────────────────────────────────
+// SERVICE PROVIDER
+// ──────────────────────────────────────────────────────────────
+model Provider {
+  id            String       @id @default(uuid())
+  firebaseUid   String       @unique
+  name          String
+  email         String       @unique
+  phone         String
+  profileImage  String       @default("")
+  location      String
+  city          String?
+  countryCode   String       @default("PK")
+  currency      String       @default("PKR")
+  services      String[]     // ["Plumber","Electrician",...]
+  bio           String       @default("")
+  hourlyRate    Float        @default(0)
+  rating        Float        @default(0.0)
+  totalReviews  Int          @default(0)
+  totalJobs     Int          @default(0)
+  isApproved    Boolean      @default(false)
+  isActive      Boolean      @default(true)
+
+  // ── Wallet fields ──
+  walletBalance Float        @default(0.0) // can go NEGATIVE (commission debt)
+  totalEarnings Float        @default(0.0) // lifetime gross earnings
+  totalCommission Float      @default(0.0) // lifetime commission paid to platform
+  walletLocked  Boolean      @default(false) // true when balance < threshold
+  walletThreshold Float      @default(-500.0) // PKR; toggle inactive if breached
+
+  documentsVerified Boolean  @default(false)
+  documentVerificationDate  DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  bookings      Booking[]
+  reviews       Review[]
+  payments      Payment[]    @relation("ProviderPayments")
+  walletLedger  WalletLedger[]
+  walletTopUps  WalletTopUp[]
+}
+
+// ──────────────────────────────────────────────────────────────
+// BOOKING / JOB
+// ──────────────────────────────────────────────────────────────
+enum BookingStatus {
+  PENDING
+  ACCEPTED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model Booking {
+  id              String        @id @default(uuid())
+  userId          String
+  providerId      String
+  serviceType     String
+  description     String
+  scheduledTime   DateTime
+  estimatedCost   Float
+  finalCost       Float         @default(0.0)
+  status          BookingStatus @default(PENDING)
+  location        String
+  latitude        Float         @default(0.0)
+  longitude       Float         @default(0.0)
+  cancellationReason String?
+  paymentMethod   PaymentType?  // CASH | MOBILE_WALLET | CREDIT_CARD
+  createdAt       DateTime      @default(now())
+  completedAt     DateTime?
+  updatedAt       DateTime      @updatedAt
+
+  user            User          @relation(fields: [userId], references: [id])
+  provider        Provider      @relation(fields: [providerId], references: [id])
+  payment         Payment[]
+  review          Review[]
+}
+
+// ──────────────────────────────────────────────────────────────
+// PAYMENT TRANSACTION
+// ──────────────────────────────────────────────────────────────
+enum PaymentType {
+  CASH
+  MOBILE_WALLET
+  CREDIT_CARD
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+model Payment {
+  id              String        @id @default(uuid())
+  bookingId       String
+  userId          String
+  providerId      String
+
+  // ── Core financial fields (all stored with 2 decimal precision) ──
+  grossAmount     Float         // total job price paid by customer
+  commissionFee   Float         // 15% platform commission (Zenith Intercontinental LLC)
+  netAmount       Float         // provider net = grossAmount - commissionFee (negative for cash jobs)
+  currency        String        @default("PKR") // PKR | USD | AED
+
+  // ── Method & status ──
+  method          PaymentType
+  status          PaymentStatus @default(PENDING)
+  gatewayReference String?      // transaction ID from Paymob / Airwallex
+
+  // ── Timestamps ──
+  createdAt       DateTime      @default(now())
+  completedAt     DateTime?
+  refundedAt      DateTime?
+
+  // ── Relations ──
+  booking         Booking       @relation(fields: [bookingId], references: [id])
+  user            User          @relation("UserPayments", fields: [userId], references: [id])
+  provider        Provider      @relation("ProviderPayments", fields: [providerId], references: [id])
+}
+
+// ──────────────────────────────────────────────────────────────
+// WALLET LEDGER (immutable log of every balance-affecting event)
+// ──────────────────────────────────────────────────────────────
+enum LedgerEntryType {
+  COMMISSION_DEBIT     // 15% cut deducted from provider wallet
+  TOP_UP              // provider adds money to clear negative balance
+  EARNINGS_CREDIT     // digital payment goes to positive balance
+  REFUND              // refunded amount
+  ADJUSTMENT          // manual admin correction
+}
+
+model WalletLedger {
+  id              String        @id @default(uuid())
+  providerId      String
+  entryType       LedgerEntryType
+  amount          Float         // positive or negative
+  balanceBefore   Float
+  balanceAfter    Float
+  referenceType   String?       // "BOOKING", "TOP_UP"
+  referenceId     String?       // bookingId or topUpId
+  currency        String        @default("PKR")
+  description     String?
+  createdAt       DateTime      @default(now())
+
+  provider        Provider      @relation(fields: [providerId], references: [id])
+}
+
+// ──────────────────────────────────────────────────────────────
+// WALLET TOP-UP (provider clears negative balance)
+// ──────────────────────────────────────────────────────────────
+enum TopUpStatus {
+  INITIATED
+  COMPLETED
+  FAILED
+}
+
+model WalletTopUp {
+  id              String        @id @default(uuid())
+  providerId      String
+  amount          Float         // positive amount being added
+  fee             Float         @default(0.0) // processing fee if any
+  netAmount       Float         // amount - fee
+  localWalletProvider String?   // "JAZZCASH", "EASYPAISA", "NAYAPAY"
+  gatewayRef      String?       // reference from mobile wallet provider
+  status          TopUpStatus   @default(INITIATED)
+  currency        String        @default("PKR")
+  createdAt       DateTime      @default(now())
+  completedAt     DateTime?
+
+  provider        Provider      @relation(fields: [providerId], references: [id])
+}
+
+// ──────────────────────────────────────────────────────────────
+// REVIEW
+// ──────────────────────────────────────────────────────────────
+model Review {
+  id            String        @id @default(uuid())
+  bookingId     String
+  userId        String
+  providerId    String
+  rating        Float
+  comment       String
+  images        String[]      @default([])
+  createdAt     DateTime      @default(now())
+
+  booking       Booking       @relation(fields: [bookingId], references: [id])
+  user          User          @relation(fields: [userId], references: [id])
+  provider      Provider      @relation(fields: [providerId], references: [id])
+}

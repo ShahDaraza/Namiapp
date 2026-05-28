@@ -1,0 +1,70 @@
+name: serviceapp
+description: A Flutter app for hiring local service providers like mechanics, plumbers, electricians.
+
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=2.19.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Firebase
+  firebase_core: ^2.24.0
+  firebase_auth: ^4.14.0
+  cloud_firestore: ^4.14.0
+  firebase_storage: ^11.5.0
+
+  # State Management
+  provider: ^6.0.0
+
+  # UI/UX
+  google_fonts: ^6.1.0
+  intl: ^0.19.0
+  cached_network_image: ^3.3.0
+
+  # Navigation & Routing
+  go_router: ^12.0.0
+
+  # Storage
+  shared_preferences: ^2.2.0
+
+  # HTTP
+  http: ^1.1.0
+  dio: ^5.3.0
+
+  # Utilities
+  uuid: ^4.0.0
+  connectivity_plus: ^5.0.0
+  geolocator: ^9.0.0
+  permission_handler: ^11.4.0
+
+  # Date Time
+  table_calendar: ^3.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^3.0.0
+  build_runner: ^2.4.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/icons/
+    - assets/animations/
+
+  fonts:
+    - family: Poppins
+      fonts:
+        - asset: assets/fonts/Poppins-Regular.ttf
+        - asset: assets/fonts/Poppins-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Poppins-SemiBold.ttf
+          weight: 600
